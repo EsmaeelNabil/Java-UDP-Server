@@ -1,22 +1,38 @@
 package server;
 
+import java.awt.AWTException;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Random;
 
+import javax.imageio.ImageIO;
 public class mainserver {
 
 	String sendString = "1";
 	String sentence = "";
 
 	public static void main(String[] args) {
-		LoginGui h = new LoginGui();
-
+		
+		
+		
+		LoginGui h = new LoginGui();				
 		int port = args.length == 0 ? 1111 : Integer.parseInt(args[0]);
 		new mainserver().run(port);
 
 	}
+	
+	
 
 	public void run(int port) {
 		try {
@@ -70,22 +86,46 @@ public class mainserver {
 				} else if (sentence.equals("10")) {
 					cmd("setsysvolume 65535");
 				}
-				// ////////////////////////////////////////////////////////////////////////
-				 else if (sentence.equals("standby")) {
-						cmd("standby");
-					}
-				 else if (sentence.equals("poweroff")) {
-						cmd("exitwin poweroff");
-					}
-				 else if (sentence.equals("cdon")) {
-						cmd("cdrom open");
-					}
-
+				// -----------------------------Player// Control---------------------------//
 				else if (sentence.equals("next")) {
-					nextsong();
+					nextSongKeyStrokes();
+				}
+				else if (sentence.contains("list")){
+					String allsentenc = sentence;
+					String[] parts = allsentenc.split("\\s+");
+					String playlistname = parts[parts.length-1].toString();
+//					System.out.println(parts[parts.length-1].toString());
+					playthislist(playlistname);
+				}
+				else if (sentence.contains("repeat")){
+					repeatSongKeyStrokes();
+				}
+				else if (sentence.contains("random")){
+					randomSongKeyStrokes();
+				}
+				else if (sentence.equals("brb")){
+					GetPlayerScreen();
+					playOrPauseSongKeyStrokes();
+					}
 
-				} else if (sentence.equals("tvon")) {
-					sendString="K1";
+				//-------------------------------------Other things -------------------//
+				else if (sentence.equals("click")) {
+					LeftClick();
+				}
+				else if(sentence.contains("screenshot")){
+					TakeScreenShot();
+				}
+				// ---------------------------------------------------------------------//				
+				else if (sentence.equals("standby")) {
+					cmd("standby");
+				} else if (sentence.equals("poweroff")) {
+					cmd("exitwin poweroff");
+				} else if (sentence.equals("cdon")) {
+					cmd("cdrom open");
+				}
+
+				else if (sentence.equals("tvon")) {
+					sendString = "K1";
 					System.out.println("seted");
 				} else if (sentence.equals("tvoff")) {
 					UnMute();
@@ -98,7 +138,7 @@ public class mainserver {
 						Process process = Runtime.getRuntime().exec(
 								new String[] { "cmd.exe", "/c",
 										"start nircmd.exe  speak text", "\"",
-										"you said      " + sentence, "\"" });
+										"   " + sentence, "\"" });
 
 						if (sentence.equals("music")) {
 							Process processs = Runtime.getRuntime().exec(
@@ -107,8 +147,8 @@ public class mainserver {
 											"/c",
 											"start nircmd.exe  speak text",
 											"\"",
-											"what do you want to play   all the music or what  "
-													+ sentence, "\"" });
+											"so so you want to start the music? okay, if you want to play all the music type music on, witout spaces in between, and  if you want to close the music, type music off also without spaces, and if you want yo play or pause then type this , brb , and the b is, b for book , type next for playing the next song in the playlist, and if you want to play a specific play list then type the word list, then the name of the play list. thank you. try to check this site, www.Esmaeel.com . "
+													, "\"" });
 						}
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -117,14 +157,12 @@ public class mainserver {
 
 				}
 
-				
-				 // now send acknowledgement packet back to sender
-				 InetAddress IPAddress = receivePacket.getAddress();
-				 byte[] sendData = sentence.getBytes();
-				 DatagramPacket sendPacket = new DatagramPacket(sendData,
-				 sendData.length,
-				 IPAddress, 1111);
-				 serverSocket.send(sendPacket);
+				// now send acknowledgement packet back to sender
+				InetAddress IPAddress = receivePacket.getAddress();
+				byte[] sendData = sentence.getBytes();
+				DatagramPacket sendPacket = new DatagramPacket(sendData,
+						sendData.length, IPAddress, 1111);
+				serverSocket.send(sendPacket);
 
 			}
 		} catch (IOException e) {
@@ -133,19 +171,7 @@ public class mainserver {
 		// should close serverSocket in finally block
 	}
 
-	private void nextsong() {
-
-		try {
-			Process process = Runtime
-					.getRuntime()
-					.exec(new String[] { "cmd.exe", "/c",
-							"start wmplayer /prefetch:11 /Query:3;3;6;Play all music;29518;-1;;;;0;;;;2;;" });
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
+	
 
 	private void Mute() {
 
@@ -191,7 +217,6 @@ public class mainserver {
 	}
 
 	private void UnMute() {
-
 		try {
 			Process process = Runtime.getRuntime().exec(
 					new String[] { "cmd.exe", "/c",
@@ -204,6 +229,40 @@ public class mainserver {
 			e.printStackTrace();
 		}
 
+	}
+	
+	public void TakeScreenShot(){
+		try {
+            Robot robot = new Robot();
+            String format = "jpg";
+            
+
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+
+            String fileName = timeStamp+"."+ format;
+            String path = "C:\\Users\\esmaeel\\Desktop\\" ;
+            File outputFile = new File(path+fileName);
+            
+            Rectangle screenRect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
+            BufferedImage screenFullImage = robot.createScreenCapture(screenRect);
+            ImageIO.write(screenFullImage, format,outputFile);
+            
+            System.out.println("A full screenshot saved on Desktop!");
+            
+        } catch (AWTException | IOException ex) {
+            System.err.println(ex);
+        }
+	}
+	
+	public void playthislist(String PlayListName){
+		try {
+			Process process 
+			= Runtime.getRuntime().exec(
+					new String[] { "cmd.exe","/c","start wmplayer /Playlist "+PlayListName});
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void closeMusic() {
@@ -245,6 +304,85 @@ public class mainserver {
 			e.printStackTrace();
 		}
 
+	}
+
+	public void GetPlayerScreen(){
+		try {
+			Process process = Runtime.getRuntime().exec(
+					new String[] { "cmd.exe", "/c",
+							"start wmplayer /Task NowPlaying" });
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+	public void LeftClick() {
+		try {
+			Robot robot = new Robot();
+			// Simulate a key press
+			int mask = InputEvent.BUTTON1_DOWN_MASK;
+			robot.mousePress(mask);
+			robot.mouseRelease(mask);
+			
+
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+	public void playOrPauseSongKeyStrokes() {
+		try {
+			Robot robot = new Robot();
+			// Simulate a key press
+			robot.keyPress(KeyEvent.VK_CONTROL);
+			robot.keyPress(KeyEvent.VK_P);
+			robot.keyRelease(KeyEvent.VK_CONTROL);
+			robot.keyRelease(KeyEvent.VK_P);
+
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void repeatSongKeyStrokes() {
+		GetPlayerScreen();
+		try {
+			Robot robot = new Robot();
+			// Simulate a key press
+			robot.keyPress(KeyEvent.VK_CONTROL);
+			robot.keyPress(KeyEvent.VK_T);
+			robot.keyRelease(KeyEvent.VK_CONTROL);
+			robot.keyRelease(KeyEvent.VK_T);
+
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+	public void randomSongKeyStrokes() {
+		GetPlayerScreen();
+		try {
+			Robot robot = new Robot();
+			// Simulate a key press
+			robot.keyPress(KeyEvent.VK_CONTROL);
+			robot.keyPress(KeyEvent.VK_H);
+			robot.keyRelease(KeyEvent.VK_CONTROL);
+			robot.keyRelease(KeyEvent.VK_H);
+
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+	public void nextSongKeyStrokes() {
+		GetPlayerScreen();
+		try {
+			Robot robot = new Robot();
+			// Simulate a key press
+			robot.keyPress(KeyEvent.VK_CONTROL);
+			robot.keyPress(KeyEvent.VK_F);
+			robot.keyRelease(KeyEvent.VK_CONTROL);
+			robot.keyRelease(KeyEvent.VK_F);
+
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void cmd(String commandline) {
