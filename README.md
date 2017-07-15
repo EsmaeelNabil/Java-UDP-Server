@@ -22,3 +22,12 @@ For receiving UDP packets and also for processing some of it ,
 - cdon : opens cdrom
 
 - And others .. 
+
+### New Features : 
+- list : send this word + playlist name in the last of any sentence to play this playlist on windows media player clasic
+- repeat : Turning on and of the repeat feature in Windows media player clasic
+- random : Turning on and of the Random feature in Windows media player clasic
+- brb : Play or Pause the song that's playing right now
+---------------------
+- click : Makes Mouse left Click in the place that the pointer is on
+- screenshot : Takes Screenshot of the FullScreen and save it on the Desktop
